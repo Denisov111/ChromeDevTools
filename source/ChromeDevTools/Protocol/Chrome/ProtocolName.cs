@@ -508,7 +508,8 @@ namespace MasterDevs.ChromeDevTools.Protocol.Chrome
 		public static class Input
 		{
 			public const string SetIgnoreInputEvents = "Input.setIgnoreInputEvents";
-			public const string DispatchKeyEvent = "Input.dispatchKeyEvent";
+            public const string InsertText = "Input.insertText";
+            public const string DispatchKeyEvent = "Input.dispatchKeyEvent";
 			public const string DispatchMouseEvent = "Input.dispatchMouseEvent";
 			public const string DispatchTouchEvent = "Input.dispatchTouchEvent";
 			public const string EmulateTouchFromMouseEvent = "Input.emulateTouchFromMouseEvent";

@@ -91,12 +91,9 @@ namespace MasterDevs.ChromeDevTools
         private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived: TBase
         {
             var tcs = new TaskCompletionSource<TDerived>();
-            task.ContinueWith(t => tcs.SetResult((TDerived)t.Result),
-                TaskContinuationOptions.OnlyOnRanToCompletion);
-            task.ContinueWith(t => tcs.SetException(t.Exception.InnerExceptions),
-                TaskContinuationOptions.OnlyOnFaulted);
-            task.ContinueWith(t => tcs.SetCanceled(),
-                TaskContinuationOptions.OnlyOnCanceled);
+            task.ContinueWith(t => tcs.SetResult((TDerived)t.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
+            task.ContinueWith(t => tcs.SetException(t.Exception.InnerExceptions), TaskContinuationOptions.OnlyOnFaulted);
+            task.ContinueWith(t => tcs.SetCanceled(), TaskContinuationOptions.OnlyOnCanceled);
             return tcs.Task;
         }
 
@@ -257,7 +254,7 @@ namespace MasterDevs.ChromeDevTools
                 HandleEvent(evnt);
                 return;
             }
-            throw new Exception("Don't know what to do with response: " + e.Message);
+            //throw new Exception("Don't know what to do with response: " + e.Message);
         }
 
         private void WebSocket_Opened(object sender, EventArgs e)

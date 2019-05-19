@@ -10,7 +10,8 @@ namespace MasterDevs.ChromeDevTools
         public IDirectoryCleaner DirectoryCleaner { get; set; }
         public string ChromePath { get; }
 
-        public ChromeProcessFactory(IDirectoryCleaner directoryCleaner, string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+        //public ChromeProcessFactory(IDirectoryCleaner directoryCleaner, string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+        public ChromeProcessFactory(IDirectoryCleaner directoryCleaner, string chromePath = @"chr\chrome.exe")
         {
             DirectoryCleaner = directoryCleaner;
             ChromePath = chromePath;
@@ -19,9 +20,12 @@ namespace MasterDevs.ChromeDevTools
         public IChromeProcess Create(int port, bool headless)
         {
             string path = Path.GetRandomFileName();
+            //string path = "1111rfdw111111111111111.dhd";
             var directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
             var remoteDebuggingArg = $"--remote-debugging-port={port}";
             var userDirectoryArg = $"--user-data-dir=\"{directoryInfo.FullName}\"";
+            
+            //const string headlessArg = "--disable-gpu";
             const string headlessArg = "--headless --disable-gpu";
             var chromeProcessArgs = new List<string>
             {
