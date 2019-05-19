@@ -162,7 +162,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
                     var it = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.InsertTextCommand
                     {
-                        Text = "mahnevmaxim@mail.ru"
+                        Text = "example@mail.ru"
                     });
 
                     //pwd
