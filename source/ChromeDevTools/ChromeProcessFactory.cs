@@ -24,7 +24,9 @@ namespace MasterDevs.ChromeDevTools
             var directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
             var remoteDebuggingArg = $"--remote-debugging-port={port}";
             var userDirectoryArg = $"--user-data-dir=\"{directoryInfo.FullName}\"";
-            
+            string proxyArgs = $"--proxy-server=\"https://213.226.76.117:8000\"";
+
+
             //const string headlessArg = "--disable-gpu";
             const string headlessArg = "--headless --disable-gpu";
             var chromeProcessArgs = new List<string>
@@ -36,6 +38,7 @@ namespace MasterDevs.ChromeDevTools
             };
             if (headless)
                 chromeProcessArgs.Add(headlessArg);
+            chromeProcessArgs.Add(proxyArgs);
             var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
             var chromeProcess = Process.Start(processStartInfo);
 

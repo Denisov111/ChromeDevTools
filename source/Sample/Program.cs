@@ -63,7 +63,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
                 // STEP 1 - Run Chrome
                 var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-                using (var chromeProcess = chromeProcessFactory.Create(9252, true))
+                using (var chromeProcess = chromeProcessFactory.Create(9256, true))
                 {
                     // STEP 2 - Create a debugging session
                     var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
@@ -71,7 +71,7 @@ namespace MasterDevs.ChromeDevTools.Sample
                     IChromeSession chromeSession = chromeSessionFactory.Create(sessionInfo.WebSocketDebuggerUrl);
 
                     //cookies
-                    var ccs = await chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Network.GetAllCookiesCommand());
+                    var ccs = await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand());
                     //await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
 
                     // STEP 3 - Send a command
@@ -85,10 +85,14 @@ namespace MasterDevs.ChromeDevTools.Sample
                         Scale = 1
                     });
 
+                    //enable network
+                    var enableNetwork = await chromeSession.SendAsync(new Protocol.Chrome.Network.EnableCommand());
+
                     var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
                     {
                         Url = "http://mybot.su/login.php"
                     });
+                    await Task.Delay(10000);
                     Console.WriteLine("NavigateResponse: " + navigateResponse.Id);
 
                     // STEP 4 - Register for events (in this case, "Page" domain events)

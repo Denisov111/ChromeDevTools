@@ -551,7 +551,21 @@ namespace MasterDevs.ChromeDevTools.Protocol.Chrome
 			public const string BufferUsage = "Tracing.bufferUsage";
 		}
 
-		public static class Animation
+        public static class Fetch
+        {
+            public const string Disable = "Fetch.disable";
+            public const string Enable = "Fetch.enable";
+            public const string FailRequest = "Fetch.failRequest";
+            public const string FulfillRequest = "Fetch.fulfillRequest";
+            public const string ContinueRequest = "Fetch.continueRequest";
+            public const string ContinueWithAuth = "Fetch.continueWithAuth";
+            public const string GetResponseBody = "Fetch.getResponseBody";
+            public const string TakeResponseBodyAsStream = "Fetch.takeResponseBodyAsStream";
+            public const string RequestPaused = "Fetch.requestPaused";
+            public const string AuthRequired = "Fetch.authRequired";
+        }
+
+        public static class Animation
 		{
 			public const string Enable = "Animation.enable";
 			public const string Disable = "Animation.disable";
