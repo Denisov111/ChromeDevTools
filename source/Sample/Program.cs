@@ -13,6 +13,7 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
 
+
 namespace MasterDevs.ChromeDevTools.Sample
 {
     internal class Program
