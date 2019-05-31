@@ -33,7 +33,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MasterDevs.ChromeDevTools">
+    <Reference Include="MasterDevs.ChromeDevTools, Version=1.0.1.0, Culture=neutral, PublicKeyToken=bf02d2f4664ac884, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\ChromeDevTools\bin\Debug\MasterDevs.ChromeDevTools.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">

@@ -2,6 +2,6 @@
 {
     public interface IChromeProcessFactory
     {
-        IChromeProcess Create(int port, bool headless);
+        IChromeProcess Create(int port, bool headless, string proxyServer = null);
     }
 }

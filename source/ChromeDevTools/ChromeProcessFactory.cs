@@ -17,14 +17,22 @@ namespace MasterDevs.ChromeDevTools
             ChromePath = chromePath;
         }
 
-        public IChromeProcess Create(int port, bool headless)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="port"></param>
+        /// <param name="headless"></param>
+        /// <param name="proxyServer">string ip:port (example: 213.226.76.117:8000)</param>
+        /// <returns></returns>
+        public IChromeProcess Create(int port, bool headless, string proxyServer=null)
         {
+            /*
             string path = Path.GetRandomFileName();
             //string path = "1111rfdw111111111111111.dhd";
             var directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
             var remoteDebuggingArg = $"--remote-debugging-port={port}";
             var userDirectoryArg = $"--user-data-dir=\"{directoryInfo.FullName}\"";
-            string proxyArgs = $"--proxy-server=\"https://213.226.76.117:8000\"";
+            //string proxyArgs = $"--proxy-server=\"https://213.226.76.117:8000\"";
 
 
             //const string headlessArg = "--disable-gpu";
@@ -38,12 +46,37 @@ namespace MasterDevs.ChromeDevTools
             };
             if (headless)
                 chromeProcessArgs.Add(headlessArg);
-            chromeProcessArgs.Add(proxyArgs);
+            //chromeProcessArgs.Add(proxyArgs);
+            var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
+            var chromeProcess = Process.Start(processStartInfo);
+
+            string remoteDebuggingUrl = "http://localhost:" + port;
+            return new LocalChromeProcess(new Uri(remoteDebuggingUrl), () => DirectoryCleaner.Delete(directoryInfo), chromeProcess);*/
+
+            string proxyArgs = (proxyServer != null) ? $"--proxy-server=\"https://"+ proxyServer + "\"":null;
+
+            string path = Path.GetRandomFileName();
+            var directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
+            var remoteDebuggingArg = $"--remote-debugging-port={port}";
+            var userDirectoryArg = $"--user-data-dir=\"{directoryInfo.FullName}\"";
+            const string headlessArg = "--headless --disable-gpu";
+            var chromeProcessArgs = new List<string>
+            {
+                remoteDebuggingArg,
+                userDirectoryArg,
+                "--bwsi",
+                "--no-first-run"
+            };
+            if (headless)
+                chromeProcessArgs.Add(headlessArg);
+            if(proxyArgs!=null)
+                chromeProcessArgs.Add(proxyArgs);
             var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
             var chromeProcess = Process.Start(processStartInfo);
 
             string remoteDebuggingUrl = "http://localhost:" + port;
             return new LocalChromeProcess(new Uri(remoteDebuggingUrl), () => DirectoryCleaner.Delete(directoryInfo), chromeProcess);
         }
+        
     }
 }

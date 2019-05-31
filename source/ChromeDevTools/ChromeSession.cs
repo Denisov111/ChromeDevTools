@@ -24,6 +24,9 @@ namespace MasterDevs.ChromeDevTools
         private WebSocket _webSocket;
         private static object _Lock = new object();
 
+        public string proxyUser { get; private set; }
+        public string proxyPass { get; private set; }
+
         public ChromeSession(string endpoint, ICommandFactory commandFactory, ICommandResponseFactory responseFactory, IEventFactory eventFactory)
         {
             _endpoint = endpoint;
@@ -176,6 +179,7 @@ namespace MasterDevs.ChromeDevTools
                 NullValueHandling = NullValueHandling.Ignore,
             };
             var requestString = JsonConvert.SerializeObject(command, settings);
+            Console.WriteLine("SEND >>> "+ requestString);
             var requestResetEvent = new ManualResetEventSlim(false);
             _requestWaitHandles.AddOrUpdate(command.Id, requestResetEvent, (id, r) => requestResetEvent);
             return Task.Run(() =>
@@ -186,6 +190,7 @@ namespace MasterDevs.ChromeDevTools
                 ICommandResponse response = null;
                 _responses.TryRemove(command.Id, out response);
                 _requestWaitHandles.TryRemove(command.Id, out requestResetEvent);
+                Console.WriteLine("RECIVE <<< Id:" + response.Id + " method:" +((response.Method==null)?"null": response.Method));
                 return response;
             });
         }
@@ -260,6 +265,12 @@ namespace MasterDevs.ChromeDevTools
         private void WebSocket_Opened(object sender, EventArgs e)
         {
             _openEvent.Set();
+        }
+
+        async public void ProxyAuthenticate(string proxyUser, string proxyPass)
+        {
+            this.proxyUser= proxyUser;
+            this.proxyPass = proxyPass;
         }
     }
 }
