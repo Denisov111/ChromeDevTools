@@ -24,7 +24,7 @@ namespace MasterDevs.ChromeDevTools
         /// <param name="headless"></param>
         /// <param name="proxyServer">string ip:port (example: 213.226.76.117:8000)</param>
         /// <returns></returns>
-        public IChromeProcess Create(int port, bool headless, string proxyServer=null)
+        public IChromeProcess Create(int port, bool headless, string proxyServer = null)
         {
             /*
             string path = Path.GetRandomFileName();
@@ -53,7 +53,7 @@ namespace MasterDevs.ChromeDevTools
             string remoteDebuggingUrl = "http://localhost:" + port;
             return new LocalChromeProcess(new Uri(remoteDebuggingUrl), () => DirectoryCleaner.Delete(directoryInfo), chromeProcess);*/
 
-            string proxyArgs = (proxyServer != null) ? $"--proxy-server=\"https://"+ proxyServer + "\"":null;
+            string proxyArgs = (proxyServer != null) ? $"--proxy-server=http://" + proxyServer : null;
 
             string path = Path.GetRandomFileName();
             var directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
@@ -69,7 +69,7 @@ namespace MasterDevs.ChromeDevTools
             };
             if (headless)
                 chromeProcessArgs.Add(headlessArg);
-            if(proxyArgs!=null)
+            if (proxyArgs != null)
                 chromeProcessArgs.Add(proxyArgs);
             var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
             var chromeProcess = Process.Start(processStartInfo);
@@ -77,6 +77,6 @@ namespace MasterDevs.ChromeDevTools
             string remoteDebuggingUrl = "http://localhost:" + port;
             return new LocalChromeProcess(new Uri(remoteDebuggingUrl), () => DirectoryCleaner.Delete(directoryInfo), chromeProcess);
         }
-        
+
     }
 }
