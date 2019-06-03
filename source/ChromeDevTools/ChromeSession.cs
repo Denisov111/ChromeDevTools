@@ -24,8 +24,8 @@ namespace MasterDevs.ChromeDevTools
         private WebSocket _webSocket;
         private static object _Lock = new object();
 
-        public string proxyUser { get; private set; }
-        public string proxyPass { get; private set; }
+        public string ProxyUser { get; set; }
+        public string ProxyPass { get; set; }
 
         public ChromeSession(string endpoint, ICommandFactory commandFactory, ICommandResponseFactory responseFactory, IEventFactory eventFactory)
         {
@@ -269,8 +269,8 @@ namespace MasterDevs.ChromeDevTools
 
         async public void ProxyAuthenticate(string proxyUser, string proxyPass)
         {
-            this.proxyUser= proxyUser;
-            this.proxyPass = proxyPass;
+            this.ProxyUser= proxyUser;
+            this.ProxyPass = proxyPass;
         }
     }
 }

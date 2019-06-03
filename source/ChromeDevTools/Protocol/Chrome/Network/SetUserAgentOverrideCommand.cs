@@ -16,5 +16,15 @@ namespace MasterDevs.ChromeDevTools.Protocol.Chrome.Network
 		/// Gets or sets User agent to use.
 		/// </summary>
 		public string UserAgent { get; set; }
-	}
+        /// <summary>
+		/// Gets or sets Browser langugage to emulate.
+		/// </summary>
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string AcceptLanguage { get; set; }
+        /// <summary>
+        /// Gets or sets The platform navigator.platform should return.
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string Platform { get; set; }
+    }
 }
