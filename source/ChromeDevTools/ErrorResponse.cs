@@ -32,7 +32,9 @@ namespace MasterDevs.ChromeDevTools
 
         public string Method
         {
-            get { throw new NotSupportedException(); }
+            //get { throw new NotSupportedException(); }
+            get;
+            set;
         }
     }
 }
