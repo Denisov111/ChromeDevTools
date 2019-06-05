@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Xml.Linq;
 using System.Drawing;
 
+using System.Drawing.Imaging;
 
 namespace MasterDevs.ChromeDevTools.Sample
 {
@@ -422,9 +423,10 @@ namespace MasterDevs.ChromeDevTools.Sample
             int Y = Convert.ToInt32(topEnd- topBegin);
 
             Rectangle rectangle = new Rectangle(leftTopX, leftTopY, X, Y);
+            Bitmap bmp = new Bitmap("outputButton.png");
             //var pic = (Bitmap)pictureBox1.Image;
-            //pictureBox2.Image = pic.Clone(rectangle, PixelFormat.Format16bppRgb555);
-
+            Bitmap bmp2 = bmp.Clone(rectangle, PixelFormat.Format64bppPArgb);
+            bmp2.Save("captcha.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
             return null;
         }
     }
