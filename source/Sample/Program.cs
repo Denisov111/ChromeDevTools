@@ -65,7 +65,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
                 // STEP 1 - Run Chrome
                 var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-                using (var chromeProcess = chromeProcessFactory.Create(9387, true))
+                using (var chromeProcess = chromeProcessFactory.Create(9392, true))
                 {
                     // STEP 2 - Create a debugging session
                     var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
@@ -94,7 +94,7 @@ namespace MasterDevs.ChromeDevTools.Sample
                     {
                         Url = "http://mybot.su/login.php"
                     });
-                    await Task.Delay(10000);
+                    await Task.Delay(1000);
                     Console.WriteLine("NavigateResponse: " + navigateResponse.Id);
 
                     // STEP 4 - Register for events (in this case, "Page" domain events)
@@ -316,6 +316,9 @@ namespace MasterDevs.ChromeDevTools.Sample
                     //cookies to json string format
                     var json = Newtonsoft.Json.JsonConvert.SerializeObject(cookies);
 
+                    //cookies to xml string format
+                    XDocument doc = new XDocument();
+                    doc.Add(new XElement("items",json));
 
                     //delete cookies
                     await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
@@ -336,7 +339,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
                     //deserialise cookies
                     //set cookies
-                    JArray ja = JArray.Parse(json);
+                    JArray ja = JArray.Parse(doc.Element("items").Value);
                     List<Protocol.Chrome.Network.Cookie> cookiesList = new List<Protocol.Chrome.Network.Cookie>();
                     foreach (var cookie in ja)
                     {
