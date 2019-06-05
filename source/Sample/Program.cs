@@ -214,7 +214,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
                 ///take screenshot button
                 ///
-
+                string pathToScreenshot = GetElementScreenshot(buttonNodeId, chromeSession);
 
                     var buttonBox = chromeSession.SendAsync(new GetBoxModelCommand
                     {
@@ -395,6 +395,11 @@ namespace MasterDevs.ChromeDevTools.Sample
                     await Task.Delay(3000);
                 
             }).Wait();
+        }
+
+        private static string GetElementScreenshot(long buttonNodeId, IChromeSession chromeSession)
+        {
+            throw new NotImplementedException();
         }
     }
 }
