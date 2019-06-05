@@ -23,6 +23,17 @@ namespace MasterDevs.ChromeDevTools.Sample
         const int ViewPortHeight = 900;
         private static void Main(string[] args)
         {
+            // synchronization
+            var screenshotDone = new ManualResetEventSlim();
+
+            // STEP 1 - Run Chrome
+            var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
+            var chromeProcess = chromeProcessFactory.Create(9397, false);
+
+            var sessionInfo = chromeProcess.GetSessionInfo().Result.LastOrDefault();
+            var chromeSessionFactory = new ChromeSessionFactory();
+            IChromeSession chromeSession = chromeSessionFactory.Create(sessionInfo.WebSocketDebuggerUrl);
+
             Task.Run(async () =>
             {
                 /*
@@ -60,17 +71,8 @@ namespace MasterDevs.ChromeDevTools.Sample
 
 
 
-                // synchronization
-                var screenshotDone = new ManualResetEventSlim();
-
-                // STEP 1 - Run Chrome
-                var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-                using (var chromeProcess = chromeProcessFactory.Create(9387, true))
-                {
                     // STEP 2 - Create a debugging session
-                    var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
-                    var chromeSessionFactory = new ChromeSessionFactory();
-                    IChromeSession chromeSession = chromeSessionFactory.Create(sessionInfo.WebSocketDebuggerUrl);
+                    
 
                     //cookies
                     var ccs = await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand());
@@ -209,6 +211,10 @@ namespace MasterDevs.ChromeDevTools.Sample
                     }).Result;
                     var buttonNodeId = qsButton.Result.NodeId;
                     Console.WriteLine("buttonNodeId " + buttonNodeId);
+
+                ///take screenshot button
+                ///
+
 
                     var buttonBox = chromeSession.SendAsync(new GetBoxModelCommand
                     {
@@ -387,7 +393,7 @@ namespace MasterDevs.ChromeDevTools.Sample
                     //await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
 
                     await Task.Delay(3000);
-                }
+                
             }).Wait();
         }
     }
