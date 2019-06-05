@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
+using System.Xml.Linq;
 
 
 namespace MasterDevs.ChromeDevTools.Sample
@@ -64,7 +65,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
                 // STEP 1 - Run Chrome
                 var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-                using (var chromeProcess = chromeProcessFactory.Create(9256, true))
+                using (var chromeProcess = chromeProcessFactory.Create(9387, true))
                 {
                     // STEP 2 - Create a debugging session
                     var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();

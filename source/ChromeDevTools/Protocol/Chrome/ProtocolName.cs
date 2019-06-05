@@ -192,7 +192,8 @@ namespace MasterDevs.ChromeDevTools.Protocol.Chrome
 			public const string ScreencastVisibilityChanged = "Page.screencastVisibilityChanged";
 			public const string InterstitialShown = "Page.interstitialShown";
 			public const string InterstitialHidden = "Page.interstitialHidden";
-		}
+            public const string GetFrameTree = "Page.getFrameTree";
+        }
 
 		public static class Overlay
 		{

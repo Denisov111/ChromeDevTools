@@ -5,6 +5,8 @@
         long Id { get; }
 
         string Method { get; }
+
+        Error Error { get; }
     }
 
     public class CommandResponse : ICommandResponse
@@ -16,6 +18,12 @@
         }
 
         public string Method
+        {
+            get;
+            set;
+        }
+
+        public Error Error
         {
             get;
             set;

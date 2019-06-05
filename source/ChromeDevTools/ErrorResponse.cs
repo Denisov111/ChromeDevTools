@@ -16,7 +16,8 @@ namespace MasterDevs.ChromeDevTools
         public string Message { get; set; }
     }
 
-    public class ErrorResponse : IErrorResponse, ICommandResponse
+    //public class ErrorResponse : IErrorResponse, ICommandResponse
+    public class ErrorResponse : ICommandResponse
     {
         public Error Error
         {

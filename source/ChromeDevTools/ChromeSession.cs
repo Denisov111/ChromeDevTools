@@ -91,6 +91,7 @@ namespace MasterDevs.ChromeDevTools
             return CastTaskResult<ICommandResponse, CommandResponse<T>>(task);
         }
 
+        /*
         private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived: TBase
         {
             var tcs = new TaskCompletionSource<TDerived>();
@@ -99,13 +100,100 @@ namespace MasterDevs.ChromeDevTools
             task.ContinueWith(t => tcs.SetCanceled(), TaskContinuationOptions.OnlyOnCanceled);
             return tcs.Task;
         }
+        */
 
+        private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived : TBase
+        {
+            var tcs = new TaskCompletionSource<TDerived>();
+            task.ContinueWith(
+                delegate (Task<TBase> t)
+                {
+                    try
+                    {
+                        TDerived res = (TDerived)t.Result;
+                        tcs.SetResult(res);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        ErrorResponse error = t.Result as ErrorResponse;
+
+                        if (error != null)
+                        {
+                            string errorMessage = "";
+
+                            try
+                            {
+                                errorMessage += "Id " + System.Convert.ToString(error.Id, System.Globalization.CultureInfo.InvariantCulture) + System.Environment.NewLine;
+                            }
+                            catch
+                            { }
+
+
+                            try
+                            {
+                                errorMessage += "Error " + System.Convert.ToString(error.Error.Code, System.Globalization.CultureInfo.InvariantCulture) + System.Environment.NewLine;
+                            }
+                            catch
+                            { }
+
+
+                            try
+                            {
+                                errorMessage += error.Error.Message + System.Environment.NewLine;
+                            }
+                            catch
+                            { }
+
+
+                            try
+                            {
+                                errorMessage += error.Method;
+                            }
+                            catch
+                            { }
+
+                            var exx = new Exception() { Source="1"};
+                            tcs.SetException(new Exception(errorMessage, ex));
+                        }
+                        else
+                            tcs.SetException(ex);
+                    }
+                }, TaskContinuationOptions.OnlyOnRanToCompletion);
+            task.ContinueWith(
+                delegate (Task<TBase> t)
+                {
+                    try
+                    {
+                        tcs.SetException(t.Exception.InnerExceptions);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+
+
+                }, TaskContinuationOptions.OnlyOnFaulted
+                );
+            task.ContinueWith(
+                delegate (Task<TBase> t)
+                {
+                    try
+                    {
+                        tcs.SetCanceled();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                }, TaskContinuationOptions.OnlyOnCanceled);
+            return tcs.Task;
+        }
         public void Subscribe<T>(Action<T> handler) where T : class
         {
             var handlerType = typeof(T);
             var handlerForBag = new Action<object>(obj => handler((T)obj));
             _handlers.AddOrUpdate(handlerType.FullName,
-                (m) => new ConcurrentBag<Action<object>>(new [] { handlerForBag }),
+                (m) => new ConcurrentBag<Action<object>>(new[] { handlerForBag }),
                 (m, currentBag) =>
                 {
                     currentBag.Add(handlerForBag);
@@ -142,7 +230,8 @@ namespace MasterDevs.ChromeDevTools
             if (evnt.GetType().GetGenericTypeDefinition() == typeof(Event<>))
             {
                 handler(evnt.Params);
-            } else
+            }
+            else
             {
                 handler(evnt);
             }
@@ -179,7 +268,7 @@ namespace MasterDevs.ChromeDevTools
                 NullValueHandling = NullValueHandling.Ignore,
             };
             var requestString = JsonConvert.SerializeObject(command, settings);
-            Console.WriteLine("SEND >>> "+ requestString);
+            Console.WriteLine("SEND >>> " + requestString);
             var requestResetEvent = new ManualResetEventSlim(false);
             _requestWaitHandles.AddOrUpdate(command.Id, requestResetEvent, (id, r) => requestResetEvent);
             return Task.Run(() =>
@@ -190,7 +279,7 @@ namespace MasterDevs.ChromeDevTools
                 ICommandResponse response = null;
                 _responses.TryRemove(command.Id, out response);
                 _requestWaitHandles.TryRemove(command.Id, out requestResetEvent);
-                Console.WriteLine("RECIVE <<< Id:" + response.Id + " method:" +((response.Method==null)?"null": response.Method));
+                Console.WriteLine("RECIVE <<< Id:" + response.Id + " method:" + ((response.Method == null) ? "null" : response.Method));
                 return response;
             });
         }
@@ -269,7 +358,7 @@ namespace MasterDevs.ChromeDevTools
 
         async public void ProxyAuthenticate(string proxyUser, string proxyPass)
         {
-            this.ProxyUser= proxyUser;
+            this.ProxyUser = proxyUser;
             this.ProxyPass = proxyPass;
         }
     }
