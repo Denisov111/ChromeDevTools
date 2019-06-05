@@ -13,6 +13,7 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
 using System.Xml.Linq;
+using System.Drawing;
 
 
 namespace MasterDevs.ChromeDevTools.Sample
@@ -23,6 +24,17 @@ namespace MasterDevs.ChromeDevTools.Sample
         const int ViewPortHeight = 900;
         private static void Main(string[] args)
         {
+            // synchronization
+            var screenshotDone = new ManualResetEventSlim();
+
+            // STEP 1 - Run Chrome
+            var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
+            var chromeProcess = chromeProcessFactory.Create(9397, false);
+
+            var sessionInfo = chromeProcess.GetSessionInfo().Result.LastOrDefault();
+            var chromeSessionFactory = new ChromeSessionFactory();
+            IChromeSession chromeSession = chromeSessionFactory.Create(sessionInfo.WebSocketDebuggerUrl);
+
             Task.Run(async () =>
             {
                 /*
@@ -60,338 +72,360 @@ namespace MasterDevs.ChromeDevTools.Sample
 
 
 
-                // synchronization
-                var screenshotDone = new ManualResetEventSlim();
+                // STEP 2 - Create a debugging session
 
-                // STEP 1 - Run Chrome
-                var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-                using (var chromeProcess = chromeProcessFactory.Create(9392, true))
+
+                //cookies
+                var ccs = await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand());
+                //await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
+
+                // STEP 3 - Send a command
+                //
+                // Here we are sending a commands to tell chrome to set the viewport size 
+                // and navigate to the specified URL
+                await chromeSession.SendAsync(new SetDeviceMetricsOverrideCommand
                 {
-                    // STEP 2 - Create a debugging session
-                    var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
-                    var chromeSessionFactory = new ChromeSessionFactory();
-                    IChromeSession chromeSession = chromeSessionFactory.Create(sessionInfo.WebSocketDebuggerUrl);
+                    Width = ViewPortWidth,
+                    Height = ViewPortHeight,
+                    Scale = 1
+                });
 
-                    //cookies
-                    var ccs = await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand());
-                    //await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
+                //enable network
+                var enableNetwork = await chromeSession.SendAsync(new Protocol.Chrome.Network.EnableCommand());
 
-                    // STEP 3 - Send a command
-                    //
-                    // Here we are sending a commands to tell chrome to set the viewport size 
-                    // and navigate to the specified URL
-                    await chromeSession.SendAsync(new SetDeviceMetricsOverrideCommand
+                var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
+                {
+                    Url = "http://mybot.su/login.php"
+                });
+                await Task.Delay(10000);
+                Console.WriteLine("NavigateResponse: " + navigateResponse.Id);
+
+                // STEP 4 - Register for events (in this case, "Page" domain events)
+                // send an command to tell chrome to send us all Page events
+                // but we only subscribe to certain events in this session
+                var pageEnableResult = await chromeSession.SendAsync<Protocol.Chrome.Page.EnableCommand>();
+                Console.WriteLine("PageEnable: " + pageEnableResult.Id);
+
+                Console.WriteLine("Taking screenshot");
+                var screenshot = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
+
+                var data = Convert.FromBase64String(screenshot.Result.Data);
+                File.WriteAllBytes("output.png", data);
+                Console.WriteLine("Screenshot stored");
+                /*
+                chromeSession.Subscribe<LoadEventFiredEvent>(loadEventFired =>
+                {
+                    // we cannot block in event handler, hence the task
+                    Task.Run(async () =>
                     {
-                        Width = ViewPortWidth,
-                        Height = ViewPortHeight,
-                        Scale = 1
-                    });
+                        Console.WriteLine("LoadEventFiredEvent: " + loadEventFired.Timestamp);
 
-                    //enable network
-                    var enableNetwork = await chromeSession.SendAsync(new Protocol.Chrome.Network.EnableCommand());
-
-                    var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
-                    {
-                        Url = "http://mybot.su/login.php"
-                    });
-                    await Task.Delay(1000);
-                    Console.WriteLine("NavigateResponse: " + navigateResponse.Id);
-
-                    // STEP 4 - Register for events (in this case, "Page" domain events)
-                    // send an command to tell chrome to send us all Page events
-                    // but we only subscribe to certain events in this session
-                    var pageEnableResult = await chromeSession.SendAsync<Protocol.Chrome.Page.EnableCommand>();
-                    Console.WriteLine("PageEnable: " + pageEnableResult.Id);
-
-                    Console.WriteLine("Taking screenshot");
-                    var screenshot = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
-
-                    var data = Convert.FromBase64String(screenshot.Result.Data);
-                    File.WriteAllBytes("output.png", data);
-                    Console.WriteLine("Screenshot stored");
-                    /*
-                    chromeSession.Subscribe<LoadEventFiredEvent>(loadEventFired =>
-                    {
-                        // we cannot block in event handler, hence the task
-                        Task.Run(async () =>
-                        {
-                            Console.WriteLine("LoadEventFiredEvent: " + loadEventFired.Timestamp);
-
-                            var documentNodeId = (await chromeSession.SendAsync(new GetDocumentCommand())).Result.Root.NodeId;
-                            var bodyNodeId =
-                                (await chromeSession.SendAsync(new QuerySelectorCommand
-                                {
-                                    NodeId = documentNodeId,
-                                    Selector = "body"
-                                })).Result.NodeId;
-                            var height = (await chromeSession.SendAsync(new GetBoxModelCommand { NodeId = bodyNodeId })).Result.Model.Height;
-
-                            await chromeSession.SendAsync(new SetDeviceMetricsOverrideCommand
+                        var documentNodeId = (await chromeSession.SendAsync(new GetDocumentCommand())).Result.Root.NodeId;
+                        var bodyNodeId =
+                            (await chromeSession.SendAsync(new QuerySelectorCommand
                             {
-                                Width = ViewPortWidth,
-                                Height = height,
-                                Scale = 1
-                            });
+                                NodeId = documentNodeId,
+                                Selector = "body"
+                            })).Result.NodeId;
+                        var height = (await chromeSession.SendAsync(new GetBoxModelCommand { NodeId = bodyNodeId })).Result.Model.Height;
 
-                            await Task.Delay(1000);
-
-                            Console.WriteLine("Taking screenshot");
-                            var screenshot = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
-
-                            var data = Convert.FromBase64String(screenshot.Result.Data);
-                            File.WriteAllBytes("output.png", data);
-                            Console.WriteLine("Screenshot stored");
-
-                            // tell the main thread we are done
-                            screenshotDone.Set();
-                        });
-                    });*/
-
-                    // wait for screenshoting thread to (start and) finish
-                    //screenshotDone.Wait();
-
-                    ICommandResponse cr = chromeSession.SendAsync<GetDocumentCommand>().Result;
-                    long docNodeId = ((CommandResponse<GetDocumentCommandResponse>)cr).Result.Root.NodeId;
-                    //var dom = Protocol.Chrome.DOM.GetDocumentCommand();
-
-                    var qs = chromeSession.SendAsync(new QuerySelectorCommand
-                    {
-                        NodeId = docNodeId,
-                        Selector = "#login_input_username"
-                    }).Result;
-                    var emailNodeId = qs.Result.NodeId;
-
-                    var sv = chromeSession.SendAsync(new FocusCommand
-                    {
-                        NodeId = emailNodeId
-                    });
-
-                    var it = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.InsertTextCommand
-                    {
-                        Text = "example@mail.ru"
-                    });
-
-                    //pwd
-                    var qsPwd = chromeSession.SendAsync(new QuerySelectorCommand
-                    {
-                        NodeId = docNodeId,
-                        Selector = "#login_input_password"
-                    }).Result;
-                    var pwdNodeId = qsPwd.Result.NodeId;
-
-                    var svPwd = chromeSession.SendAsync(new FocusCommand
-                    {
-                        NodeId = pwdNodeId
-                    });
-
-                    var itPwd = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.InsertTextCommand
-                    {
-                        Text = "qwerty"
-                    });
-
-
-
-                    await Task.Delay(1000);
-
-                    Console.WriteLine("Taking screenshot 2");
-                    var screenshot2 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
-
-                    var data2 = Convert.FromBase64String(screenshot2.Result.Data);
-                    File.WriteAllBytes("output2.png", data2);
-                    Console.WriteLine("Screenshot 2 stored");
-
-
-                    //click button
-                    var qsButton = chromeSession.SendAsync(new QuerySelectorCommand
-                    {
-                        NodeId = docNodeId,
-                        Selector = "body:nth-child(2) div.container:nth-child(1) form:nth-child(21) > button.btn.btn-default:nth-child(4)"
-                    }).Result;
-                    var buttonNodeId = qsButton.Result.NodeId;
-                    Console.WriteLine("buttonNodeId " + buttonNodeId);
-
-                    var buttonBox = chromeSession.SendAsync(new GetBoxModelCommand
-                    {
-                        NodeId = buttonNodeId
-                    });
-                    var buttonBoxRes = buttonBox.Result.Result.Model;
-
-                    double leftBegin = buttonBoxRes.Border[0];
-                    double leftEnd = buttonBoxRes.Border[2];
-                    double topBegin = buttonBoxRes.Border[1];
-                    double topEnd = buttonBoxRes.Border[5];
-
-                    double x = Math.Round((leftBegin + leftEnd) / 2, 2);
-                    double y = Math.Round((topBegin + topEnd) / 2, 2);
-
-                    try
-                    {
-                        var click = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.DispatchMouseEventCommand
+                        await chromeSession.SendAsync(new SetDeviceMetricsOverrideCommand
                         {
-                            Type = "mousePressed",
-                            X = x,
-                            Y = y,
-                            ClickCount = 1,
-                            Button = "left"
+                            Width = ViewPortWidth,
+                            Height = height,
+                            Scale = 1
                         });
 
-                        await Task.Delay(100);
+                        await Task.Delay(1000);
 
-                        var clickReleased = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.DispatchMouseEventCommand
-                        {
-                            Type = "mouseReleased",
-                            X = x,
-                            Y = y,
-                            ClickCount = 1,
-                            Button = "left"
-                        });
+                        Console.WriteLine("Taking screenshot");
+                        var screenshot = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
 
-                        Console.WriteLine("midle " + x + " " + y);
-                    }
-                    catch(Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
+                        var data = Convert.FromBase64String(screenshot.Result.Data);
+                        File.WriteAllBytes("output.png", data);
+                        Console.WriteLine("Screenshot stored");
 
-                    
-                    await Task.Delay(5000);
-
-                    await chromeSession.SendAsync(new SetDeviceMetricsOverrideCommand
-                    {
-                        Width = ViewPortWidth,
-                        Height = ViewPortHeight,
-                        Scale = 1
+                        // tell the main thread we are done
+                        screenshotDone.Set();
                     });
+                });*/
 
-                    Console.WriteLine("Taking screenshot 3");
-                    var screenshot3 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
+                // wait for screenshoting thread to (start and) finish
+                //screenshotDone.Wait();
 
-                    var data3 = Convert.FromBase64String(screenshot3.Result.Data);
-                    File.WriteAllBytes("output3.png", data3);
-                    Console.WriteLine("Screenshot 3 stored");
+                ICommandResponse cr = chromeSession.SendAsync<GetDocumentCommand>().Result;
+                long docNodeId = ((CommandResponse<GetDocumentCommandResponse>)cr).Result.Root.NodeId;
+                //var dom = Protocol.Chrome.DOM.GetDocumentCommand();
+
+                var qs = chromeSession.SendAsync(new QuerySelectorCommand
+                {
+                    NodeId = docNodeId,
+                    Selector = "#login_input_username"
+                }).Result;
+                var emailNodeId = qs.Result.NodeId;
+
+                var sv = chromeSession.SendAsync(new FocusCommand
+                {
+                    NodeId = emailNodeId
+                });
+
+                var it = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.InsertTextCommand
+                {
+                    Text = "example@mail.ru"
+                });
+
+                //pwd
+                var qsPwd = chromeSession.SendAsync(new QuerySelectorCommand
+                {
+                    NodeId = docNodeId,
+                    Selector = "#login_input_password"
+                }).Result;
+                var pwdNodeId = qsPwd.Result.NodeId;
+
+                var svPwd = chromeSession.SendAsync(new FocusCommand
+                {
+                    NodeId = pwdNodeId
+                });
+
+                var itPwd = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.InsertTextCommand
+                {
+                    Text = "qwerty"
+                });
 
 
-                    //scrolling
-                    /*
-                    ICommandResponse cr_ = chromeSession.SendAsync<GetDocumentCommand>().Result;
-                    long docNodeId2 = ((CommandResponse<GetDocumentCommandResponse>)cr_).Result.Root.NodeId;
 
-                    var bodyNodeId2 =
-                                (await chromeSession.SendAsync(new QuerySelectorCommand
-                                {
-                                    NodeId = docNodeId2,
-                                    Selector = "body"
-                                })).Result.NodeId;
+                await Task.Delay(1000);
 
-                    var fc = chromeSession.SendAsync(new FocusCommand
+                Console.WriteLine("Taking screenshot 2");
+                var screenshot2 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
+
+                var data2 = Convert.FromBase64String(screenshot2.Result.Data);
+                File.WriteAllBytes("output2.png", data2);
+                Console.WriteLine("Screenshot 2 stored");
+
+
+                //click button
+                var qsButton = chromeSession.SendAsync(new QuerySelectorCommand
+                {
+                    NodeId = docNodeId,
+                    Selector = "body:nth-child(2) div.container:nth-child(1) form:nth-child(21) > button.btn.btn-default:nth-child(4)"
+                }).Result;
+                var buttonNodeId = qsButton.Result.NodeId;
+                Console.WriteLine("buttonNodeId " + buttonNodeId);
+
+                ///take screenshot button
+                ///
+                string pathToScreenshot = GetElementScreenshot(buttonNodeId, chromeSession);
+
+                var buttonBox = chromeSession.SendAsync(new GetBoxModelCommand
+                {
+                    NodeId = buttonNodeId
+                });
+                var buttonBoxRes = buttonBox.Result.Result.Model;
+
+                double leftBegin = buttonBoxRes.Border[0];
+                double leftEnd = buttonBoxRes.Border[2];
+                double topBegin = buttonBoxRes.Border[1];
+                double topEnd = buttonBoxRes.Border[5];
+
+                double x = Math.Round((leftBegin + leftEnd) / 2, 2);
+                double y = Math.Round((topBegin + topEnd) / 2, 2);
+
+                try
+                {
+                    var click = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.DispatchMouseEventCommand
                     {
-                        NodeId = bodyNodeId2
-                    });*/
-                    
+                        Type = "mousePressed",
+                        X = x,
+                        Y = y,
+                        ClickCount = 1,
+                        Button = "left"
+                    });
 
                     await Task.Delay(100);
 
-                    var scroll = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.DispatchMouseEventCommand
+                    var clickReleased = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.DispatchMouseEventCommand
                     {
-                        Type = "mouseWheel",
+                        Type = "mouseReleased",
                         X = x,
                         Y = y,
-                        DeltaX=0,
-                        DeltaY=10000
+                        ClickCount = 1,
+                        Button = "left"
                     });
 
-                    await Task.Delay(1000);
-
-                    Console.WriteLine("Taking screenshot 4");
-                    var screenshot4 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
-                    var data4 = Convert.FromBase64String(screenshot4.Result.Data);
-                    File.WriteAllBytes("output4.png", data4);
-                    Console.WriteLine("Screenshot 4 stored");
-
-
-                    //cookies
-                    var cookies = (await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand())).Result.Cookies;
-
-
-                    //cookies to json string format
-                    var json = Newtonsoft.Json.JsonConvert.SerializeObject(cookies);
-
-                    //cookies to xml string format
-                    XDocument doc = new XDocument();
-                    doc.Add(new XElement("items",json));
-
-                    //delete cookies
-                    await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
-
-
-                    //check delete cookies
-                    var cookiesForCheck = (await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand())).Result.Cookies;
-                    var navigateResponse2 = await chromeSession.SendAsync(new NavigateCommand
-                    {
-                        Url = "http://mybot.su/login.php"
-                    });
-
-                    Console.WriteLine("Taking screenshot 5");
-                    var screenshot5 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
-                    var data5 = Convert.FromBase64String(screenshot5.Result.Data);
-                    File.WriteAllBytes("output5.png", data5);
-                    Console.WriteLine("Screenshot 5 stored");
-
-                    //deserialise cookies
-                    //set cookies
-                    JArray ja = JArray.Parse(doc.Element("items").Value);
-                    List<Protocol.Chrome.Network.Cookie> cookiesList = new List<Protocol.Chrome.Network.Cookie>();
-                    foreach (var cookie in ja)
-                    {
-                        Console.WriteLine(cookie["Name"]);
-                        Console.WriteLine(cookie["Value"]);
-                        Console.WriteLine(cookie["Domain"]);
-                        Console.WriteLine(cookie["Path"]);
-                        Console.WriteLine(cookie["Expires"]);
-                        Console.WriteLine(cookie["Size"]);
-                        Console.WriteLine(cookie["HttpOnly"]);
-                        Console.WriteLine(cookie["Secure"]);
-                        Console.WriteLine(cookie["Session"]);
-                        Console.WriteLine(cookie["SameSite"]);
-
-                        double expires = Double.Parse(cookie["Expires"].ToString());
-                        bool secure = (cookie["Secure"].ToString() == "true") ? true : false;
-                        bool httpOnly = (cookie["HttpOnly"].ToString() == "true") ? true : false;
-
-                        var setCookie = await chromeSession.SendAsync(new Protocol.Chrome.Network.SetCookieCommand
-                        {
-                            Name= cookie["Name"].ToString(),
-                            Value= cookie["Value"].ToString(),
-                            Domain = cookie["Domain"].ToString(),
-                            Path = cookie["Path"].ToString(),
-                            Secure = secure,
-                            HttpOnly = httpOnly,
-                            SameSite = cookie["SameSite"].ToString(),
-                            Expires = expires
-                        });
-                    }
-                    await Task.Delay(1000);
-
-
-                    //check cookies settings
-                    var cookiesForCheck2 = (await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand())).Result.Cookies;
-                    var navigateResponse3 = await chromeSession.SendAsync(new NavigateCommand
-                    {
-                        Url = "http://mybot.su/login.php"
-                    });
-
-                    Console.WriteLine("Taking screenshot 6");
-                    var screenshot6 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
-                    var data6 = Convert.FromBase64String(screenshot6.Result.Data);
-                    File.WriteAllBytes("output6.png", data6);
-                    Console.WriteLine("Screenshot 6 stored");
-
-                    Console.WriteLine("Exiting ..");
-                    //await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
-
-                    await Task.Delay(3000);
+                    Console.WriteLine("midle " + x + " " + y);
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+
+
+                await Task.Delay(5000);
+
+                await chromeSession.SendAsync(new SetDeviceMetricsOverrideCommand
+                {
+                    Width = ViewPortWidth,
+                    Height = ViewPortHeight,
+                    Scale = 1
+                });
+
+                Console.WriteLine("Taking screenshot 3");
+                var screenshot3 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
+
+                var data3 = Convert.FromBase64String(screenshot3.Result.Data);
+                File.WriteAllBytes("output3.png", data3);
+                Console.WriteLine("Screenshot 3 stored");
+
+
+                //scrolling
+                /*
+                ICommandResponse cr_ = chromeSession.SendAsync<GetDocumentCommand>().Result;
+                long docNodeId2 = ((CommandResponse<GetDocumentCommandResponse>)cr_).Result.Root.NodeId;
+
+                var bodyNodeId2 =
+                            (await chromeSession.SendAsync(new QuerySelectorCommand
+                            {
+                                NodeId = docNodeId2,
+                                Selector = "body"
+                            })).Result.NodeId;
+
+                var fc = chromeSession.SendAsync(new FocusCommand
+                {
+                    NodeId = bodyNodeId2
+                });*/
+
+
+                await Task.Delay(100);
+
+                var scroll = chromeSession.SendAsync(new ChromeDevTools.Protocol.Chrome.Input.DispatchMouseEventCommand
+                {
+                    Type = "mouseWheel",
+                    X = x,
+                    Y = y,
+                    DeltaX = 0,
+                    DeltaY = 10000
+                });
+
+                await Task.Delay(1000);
+
+                Console.WriteLine("Taking screenshot 4");
+                var screenshot4 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
+                var data4 = Convert.FromBase64String(screenshot4.Result.Data);
+                File.WriteAllBytes("output4.png", data4);
+                Console.WriteLine("Screenshot 4 stored");
+
+
+                //cookies
+                var cookies = (await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand())).Result.Cookies;
+
+
+                //cookies to json string format
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(cookies);
+
+
+                //delete cookies
+                await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
+
+
+                //check delete cookies
+                var cookiesForCheck = (await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand())).Result.Cookies;
+                var navigateResponse2 = await chromeSession.SendAsync(new NavigateCommand
+                {
+                    Url = "http://mybot.su/login.php"
+                });
+
+                Console.WriteLine("Taking screenshot 5");
+                var screenshot5 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
+                var data5 = Convert.FromBase64String(screenshot5.Result.Data);
+                File.WriteAllBytes("output5.png", data5);
+                Console.WriteLine("Screenshot 5 stored");
+
+                //deserialise cookies
+                //set cookies
+                JArray ja = JArray.Parse(json);
+                List<Protocol.Chrome.Network.Cookie> cookiesList = new List<Protocol.Chrome.Network.Cookie>();
+                foreach (var cookie in ja)
+                {
+                    Console.WriteLine(cookie["Name"]);
+                    Console.WriteLine(cookie["Value"]);
+                    Console.WriteLine(cookie["Domain"]);
+                    Console.WriteLine(cookie["Path"]);
+                    Console.WriteLine(cookie["Expires"]);
+                    Console.WriteLine(cookie["Size"]);
+                    Console.WriteLine(cookie["HttpOnly"]);
+                    Console.WriteLine(cookie["Secure"]);
+                    Console.WriteLine(cookie["Session"]);
+                    Console.WriteLine(cookie["SameSite"]);
+
+                    double expires = Double.Parse(cookie["Expires"].ToString());
+                    bool secure = (cookie["Secure"].ToString() == "true") ? true : false;
+                    bool httpOnly = (cookie["HttpOnly"].ToString() == "true") ? true : false;
+
+                    var setCookie = await chromeSession.SendAsync(new Protocol.Chrome.Network.SetCookieCommand
+                    {
+                        Name = cookie["Name"].ToString(),
+                        Value = cookie["Value"].ToString(),
+                        Domain = cookie["Domain"].ToString(),
+                        Path = cookie["Path"].ToString(),
+                        Secure = secure,
+                        HttpOnly = httpOnly,
+                        SameSite = cookie["SameSite"].ToString(),
+                        Expires = expires
+                    });
+                }
+                await Task.Delay(1000);
+
+
+                //check cookies settings
+                var cookiesForCheck2 = (await chromeSession.SendAsync(new Protocol.Chrome.Network.GetAllCookiesCommand())).Result.Cookies;
+                var navigateResponse3 = await chromeSession.SendAsync(new NavigateCommand
+                {
+                    Url = "http://mybot.su/login.php"
+                });
+
+                Console.WriteLine("Taking screenshot 6");
+                var screenshot6 = await chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" });
+                var data6 = Convert.FromBase64String(screenshot6.Result.Data);
+                File.WriteAllBytes("output6.png", data6);
+                Console.WriteLine("Screenshot 6 stored");
+
+                Console.WriteLine("Exiting ..");
+                //await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
+
+                await Task.Delay(3000);
+
             }).Wait();
+        }
+
+        private static string GetElementScreenshot(long buttonNodeId, IChromeSession chromeSession)
+        {
+            var buttonBox = chromeSession.SendAsync(new GetBoxModelCommand
+            {
+                NodeId = buttonNodeId
+            });
+            var buttonBoxRes = buttonBox.Result.Result.Model;
+
+            double leftBegin = buttonBoxRes.Border[0];
+            double leftEnd = buttonBoxRes.Border[2];
+            double topBegin = buttonBoxRes.Border[1];
+            double topEnd = buttonBoxRes.Border[5];
+
+
+            var screenshot = chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" }).Result;
+            var data6 = Convert.FromBase64String(screenshot.Result.Data);
+            File.WriteAllBytes("outputButton.png", data6);
+
+            int leftTopX = Convert.ToInt32(leftBegin);
+            int leftTopY  = Convert.ToInt32(topBegin);
+            int X = Convert.ToInt32(leftEnd-leftBegin);
+            int Y = Convert.ToInt32(topEnd- topBegin);
+
+            Rectangle rectangle = new Rectangle(leftTopX, leftTopY, X, Y);
+            //var pic = (Bitmap)pictureBox1.Image;
+            //pictureBox2.Image = pic.Clone(rectangle, PixelFormat.Format16bppRgb555);
+
+            return null;
         }
     }
 }
