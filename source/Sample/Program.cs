@@ -4,17 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using MasterDevs.ChromeDevTools.Protocol.Chrome.DOM;
-//using MasterDevs.ChromeDevTools.Sample;
 using Task = System.Threading.Tasks.Task;
-//using System.Diagnostics;
-//using System.Collections.Specialized;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using System.Drawing;
-
 using System.Drawing.Imaging;
 
 namespace MasterDevs.ChromeDevTools.Sample
@@ -98,7 +94,7 @@ namespace MasterDevs.ChromeDevTools.Sample
                 {
                     Url = "http://mybot.su/login.php"
                 });
-                await Task.Delay(10000);
+                await Task.Delay(3000);
                 Console.WriteLine("NavigateResponse: " + navigateResponse.Id);
 
                 // STEP 4 - Register for events (in this case, "Page" domain events)
@@ -397,6 +393,7 @@ namespace MasterDevs.ChromeDevTools.Sample
                 await Task.Delay(3000);
 
             }).Wait();
+            chromeProcess.Dispose();
         }
 
         private static string GetElementScreenshot(long buttonNodeId, IChromeSession chromeSession)
@@ -411,11 +408,9 @@ namespace MasterDevs.ChromeDevTools.Sample
             double leftEnd = buttonBoxRes.Border[2];
             double topBegin = buttonBoxRes.Border[1];
             double topEnd = buttonBoxRes.Border[5];
-
-
+            
             var screenshot = chromeSession.SendAsync(new CaptureScreenshotCommand { Format = "png" }).Result;
             var data6 = Convert.FromBase64String(screenshot.Result.Data);
-            File.WriteAllBytes("outputButton.png", data6);
 
             int leftTopX = Convert.ToInt32(leftBegin);
             int leftTopY  = Convert.ToInt32(topBegin);
@@ -423,10 +418,13 @@ namespace MasterDevs.ChromeDevTools.Sample
             int Y = Convert.ToInt32(topEnd- topBegin);
 
             Rectangle rectangle = new Rectangle(leftTopX, leftTopY, X, Y);
-            Bitmap bmp = new Bitmap("outputButton.png");
-            //var pic = (Bitmap)pictureBox1.Image;
+            Bitmap bmp;
+            using (var ms = new MemoryStream(data6))
+            {
+                bmp = new Bitmap(ms);
+            }
             Bitmap bmp2 = bmp.Clone(rectangle, PixelFormat.Format64bppPArgb);
-            bmp2.Save("captcha.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
+            bmp2.Save("captchaFromArray.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
             return null;
         }
     }
