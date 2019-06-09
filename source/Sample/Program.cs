@@ -26,7 +26,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
             // STEP 1 - Run Chrome
             var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-            var chromeProcess = chromeProcessFactory.Create(9397, false);
+            var chromeProcess = chromeProcessFactory.Create(9400, false);
 
             var sessionInfo = chromeProcess.GetSessionInfo().Result.LastOrDefault();
             var chromeSessionFactory = new ChromeSessionFactory();
