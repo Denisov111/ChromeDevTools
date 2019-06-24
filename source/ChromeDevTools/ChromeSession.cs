@@ -24,6 +24,7 @@ namespace MasterDevs.ChromeDevTools
         private ConcurrentDictionary<long, ICommandResponse> _responses = new ConcurrentDictionary<long, ICommandResponse>();
         private WebSocket _webSocket;
         private static object _Lock = new object();
+        public string mainSessionId;
 
         public string ProxyUser { get; set; }
         public string ProxyPass { get; set; }
