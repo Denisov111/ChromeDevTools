@@ -74,6 +74,7 @@ namespace MasterDevs.ChromeDevTools
             var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
             var chromeProcess = Process.Start(processStartInfo);
 
+
             string remoteDebuggingUrl = "http://localhost:" + port;
             return new LocalChromeProcess(new Uri(remoteDebuggingUrl), () => DirectoryCleaner.Delete(directoryInfo), chromeProcess);
         }

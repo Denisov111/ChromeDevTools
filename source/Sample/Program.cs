@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Xml.Linq;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Diagnostics;
 
 namespace MasterDevs.ChromeDevTools.Sample
 {
@@ -27,10 +28,12 @@ namespace MasterDevs.ChromeDevTools.Sample
             // STEP 1 - Run Chrome
             var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
             var chromeProcess = chromeProcessFactory.Create(9400, false);
+            Process pr = ((RemoteChromeProcess)chromeProcess).Process;
 
+            // STEP 2 - Create a debugging session
             var sessionInfo = chromeProcess.GetSessionInfo().Result.LastOrDefault();
             var chromeSessionFactory = new ChromeSessionFactory();
-            IChromeSession chromeSession = chromeSessionFactory.Create(sessionInfo.WebSocketDebuggerUrl);
+            IChromeSession chromeSession = chromeSessionFactory.Create(sessionInfo.WebSocketDebuggerUrl, pr);
 
             Task.Run(async () =>
             {
@@ -69,7 +72,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
 
 
-                // STEP 2 - Create a debugging session
+                
 
 
                 //cookies

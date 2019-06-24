@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -26,6 +27,7 @@ namespace MasterDevs.ChromeDevTools
         }
 
         public Uri RemoteDebuggingUri { get; }
+        public Process Process { get; set; }
 
         public virtual void Dispose()
         {

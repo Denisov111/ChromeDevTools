@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace MasterDevs.ChromeDevTools
 {
@@ -18,5 +19,6 @@ namespace MasterDevs.ChromeDevTools
 
         void Subscribe<T>(Action<T> handler) where T : class;
         void ProxyAuthenticate(string proxyUser, string proxyPass);
+        Process Process { get; set; }
     }
 }

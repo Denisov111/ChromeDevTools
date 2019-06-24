@@ -13,7 +13,6 @@ namespace MasterDevs.ChromeDevTools
         }
 
         public Action DisposeUserDirectory { get; set; }
-        public Process Process { get; set; }
 
         public override void Dispose()
         {
