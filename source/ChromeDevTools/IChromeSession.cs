@@ -20,5 +20,6 @@ namespace MasterDevs.ChromeDevTools
         void Subscribe<T>(Action<T> handler) where T : class;
         void ProxyAuthenticate(string proxyUser, string proxyPass);
         Process Process { get; set; }
+        string MainSessionId { get; set; }
     }
 }

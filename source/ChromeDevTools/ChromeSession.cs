@@ -24,11 +24,11 @@ namespace MasterDevs.ChromeDevTools
         private ConcurrentDictionary<long, ICommandResponse> _responses = new ConcurrentDictionary<long, ICommandResponse>();
         private WebSocket _webSocket;
         private static object _Lock = new object();
-        public string mainSessionId;
 
         public string ProxyUser { get; set; }
         public string ProxyPass { get; set; }
-        public Process Process { get ; set ; }
+        public Process Process { get; set; }
+        public string MainSessionId { get; set; }
 
         public ChromeSession(string endpoint, ICommandFactory commandFactory, ICommandResponseFactory responseFactory, IEventFactory eventFactory)
         {
@@ -155,7 +155,7 @@ namespace MasterDevs.ChromeDevTools
                             catch
                             { }
 
-                            var exx = new Exception() { Source="1"};
+                            var exx = new Exception() { Source = "1" };
                             tcs.SetException(new Exception(errorMessage, ex));
                         }
                         else
@@ -265,6 +265,8 @@ namespace MasterDevs.ChromeDevTools
 
         private Task<ICommandResponse> SendCommand(Command command, CancellationToken cancellationToken)
         {
+            if (MainSessionId != null) command.SessionId = MainSessionId;
+
             var settings = new JsonSerializerSettings
             {
                 ContractResolver = new MessageContractResolver(),

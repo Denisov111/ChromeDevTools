@@ -5,9 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WPFEmbededTest"
         mc:Ignorable="d"
-        Title="MainWindow" Height="750" Width="1200">
+        Title="MainWindow" Height="850" Width="1500">
     <Grid>
-        <WindowsFormsHost x:Name="host" HorizontalAlignment="Left" Height="658" Margin="0,61,0,0" VerticalAlignment="Top" Width="1192"/>
+        <WindowsFormsHost x:Name="host" HorizontalAlignment="Left" Height="758" Margin="0,61,0,0" VerticalAlignment="Top" Width="1492"/>
+        <Button Content="AlignToPannel" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="102" Click="Button_Click"/>
+        <Button Content="ShowWindow SW_MAXIMIZE" HorizontalAlignment="Left" Margin="241,21,0,0" VerticalAlignment="Top" Width="166" Click="Button_Click_1"/>
+        <Button Content="ShowWindow Normal" HorizontalAlignment="Left" Margin="439,21,0,0" VerticalAlignment="Top" Width="167" Click="Button_Click_2"/>
+        <Button Content="ShowWindow ShowMinimized" HorizontalAlignment="Left" Margin="632,21,0,0" VerticalAlignment="Top" Width="179" Click="Button_Click_3"/>
+        <Button Content="Goooooogle" HorizontalAlignment="Left" Margin="10,36,0,0" VerticalAlignment="Top" Width="102" Click="Button_Click_4"/>
+        <Button Content="Show" HorizontalAlignment="Left" Margin="887,21,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_5"/>
 
     </Grid>
 </Window>

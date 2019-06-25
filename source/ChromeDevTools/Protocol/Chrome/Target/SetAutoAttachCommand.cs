@@ -20,5 +20,10 @@ namespace MasterDevs.ChromeDevTools.Protocol.Chrome.Target
 		/// Gets or sets Whether to pause new targets when attaching to them. Use <code>Runtime.runIfWaitingForDebugger</code> to run paused targets.
 		/// </summary>
 		public bool WaitForDebuggerOnStart { get; set; }
-	}
+        /// <summary>
+		/// Gets or sets Enables "flat" access to the session via specifying sessionId attribute in the commands.
+		/// </summary>
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Flatten { get; set; }
+    }
 }
