@@ -27,6 +27,7 @@ using System.IO;
 using Chrome = MasterDevs.ChromeDevTools.Protocol.Chrome;
 using MasterDevs.ChromeDevTools.Protocol.Chrome.Network;
 using MasterDevs.ChromeDevTools.Protocol.Chrome.Fetch;
+using System.Collections.ObjectModel;
 
 namespace WPFEmbededTest
 {
@@ -154,6 +155,7 @@ namespace WPFEmbededTest
 
         IChromeSession chromeSession;
         List<IntPtr> childHandles;
+        int procId;
 
         public MainWindow()
         {
@@ -188,6 +190,7 @@ namespace WPFEmbededTest
 
             childHandles=null;
             pDocked = pr;
+            procId = pr.Id;
             while (hWndDocked == IntPtr.Zero)
             {
                 pDocked.WaitForInputIdle(1000); //wait for the window to be ready for input;
@@ -265,11 +268,12 @@ namespace WPFEmbededTest
             //int WM_PAINT = 0xF;
             //await Task.Delay(1000);
             //SendMessage(childHandles[0], WM_PAINT, IntPtr.Zero, IntPtr.Zero);
+            await Task.Delay(100);
             InvalidateRect(childHandles[0], IntPtr.Zero, true);
             UpdateWindow(childHandles[0]);
-
-            InvalidateRect(hWndDocked, IntPtr.Zero, true);
-            UpdateWindow(hWndDocked);
+            //await Task.Delay(100);
+            //InvalidateRect(hWndDocked, IntPtr.Zero, true);
+            //UpdateWindow(hWndDocked);
         }
 
         void window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -328,5 +332,72 @@ namespace WPFEmbededTest
         {
             SetActiveWindow(childHandles[0]);
         }
+
+
+        delegate bool EnumThreadDelegate(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        static extern bool EnumThreadWindows(int dwThreadId, EnumThreadDelegate lpfn, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        async private void Button_Click_8(object sender, RoutedEventArgs e)
+        {
+            //var res = chromeSession.SendAsync<GetProcessInfoCommand>().Result;
+
+            var hwnds = EnumerateProcessWindowHandles(procId);
+            var windInfos = GetInfoAboutWindows(hwnds);
+
+
+        }
+
+        private object GetInfoAboutWindows(IEnumerable<IntPtr> hwnds)
+        {
+            ObservableCollection<HwndInfo> coll = new ObservableCollection<HwndInfo>();
+
+            foreach(IntPtr intPtr in hwnds)
+            {
+                string title = GetText(intPtr);
+                StringBuilder className = new StringBuilder(256);
+                GetClassName(intPtr, className, className.Capacity);
+                coll.Add(new HwndInfo() {
+                    Title =title,
+                    Hwnd=intPtr,
+                    ClassName=className.ToString()
+                });
+            }
+
+
+            
+
+            return coll;
+        }
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        static IEnumerable<IntPtr> EnumerateProcessWindowHandles(int processId)
+        {
+            var handles = new List<IntPtr>();
+
+            foreach (ProcessThread thread in Process.GetProcessById(processId).Threads)
+                EnumThreadWindows(thread.Id,
+                    (hWnd, lParam) => { handles.Add(hWnd); return true; }, IntPtr.Zero);
+
+            return handles;
+        }
+
+        public static string GetText(IntPtr hWnd)
+        {
+            // Allocate correct string length first
+            int length = GetWindowTextLength(hWnd);
+            StringBuilder sb = new StringBuilder(length + 1);
+            GetWindowText(hWnd, sb, sb.Capacity);
+            return sb.ToString();
+        }
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern int GetWindowTextLength(IntPtr hWnd);
     }
 }
