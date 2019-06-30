@@ -37,9 +37,24 @@ namespace WPFEmbededTest
     {
         private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetActiveWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        static extern bool UpdateWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
         [DllImport("user32")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool EnumChildWindows(IntPtr window, EnumWindowProc callback, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, Int32 Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -131,10 +146,6 @@ namespace WPFEmbededTest
             /// </summary>
             ForceMinimize = 11
         }
-        
-
-        const string proxyUser = "pkdhZA";
-        const string proxyPass = "U81kW8";
 
         private Process pDocked;
         private IntPtr hWndOriginalParent;
@@ -142,6 +153,7 @@ namespace WPFEmbededTest
         public System.Windows.Forms.Panel pannel;
 
         IChromeSession chromeSession;
+        List<IntPtr> childHandles;
 
         public MainWindow()
         {
@@ -156,7 +168,7 @@ namespace WPFEmbededTest
             
             // STEP 1 - Run Chrome
             var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-            var chromeProcess = chromeProcessFactory.Create(9238, false, "91.215.85.219:8000");
+            var chromeProcess = chromeProcessFactory.Create(9238, false);
             Process pr = ((RemoteChromeProcess)chromeProcess).Process;
             // STEP 2 - Create a debugging session
             var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
@@ -170,11 +182,11 @@ namespace WPFEmbededTest
 
             var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
             {
-                Url = "about:blank"
+                Url = "https://google.com"
             });
 
 
-            List < IntPtr> childHandles=null;
+            childHandles=null;
             pDocked = pr;
             while (hWndDocked == IntPtr.Zero)
             {
@@ -185,6 +197,7 @@ namespace WPFEmbededTest
                     return; //abort if the process finished before we got a handle.
                 }
                 hWndDocked = pDocked.MainWindowHandle;  //cache the window handle
+                //var proceeses=pDocked.
                 childHandles = GetAllChildHandles(hWndDocked);
             }
             //Windows API call to change the parent of the target window.
@@ -195,38 +208,10 @@ namespace WPFEmbededTest
             SizeChanged += window_SizeChanged;
             //Perform an initial call to set the size.
             AlignToPannel();
-
             
-            chromeSession.Subscribe<DataReceivedEvent>(dataReceivedEvent =>
-            {
-                DataReceivedEventHandler(dataReceivedEvent);
-            });
-
-            chromeSession.Subscribe<EventSourceMessageReceivedEvent>(eventSourceMessageReceivedEvent =>
-            {
-                EventSourceMessageReceivedEventHandler(eventSourceMessageReceivedEvent);
-            });
-
-            chromeSession.Subscribe<RequestWillBeSentEvent>(requestWillBeSentEvent =>
-            {
-                RequestWillBeSentEventHandler(requestWillBeSentEvent);
-            });
-
-            chromeSession.Subscribe<RequestPausedEvent>(requestPausedEvent =>
-            {
-                RequestPausedEventHandler(requestPausedEvent, chromeSession);
-            });
-
-            chromeSession.Subscribe<AuthRequiredEvent>(authRequiredEvent =>
-            {
-                AuthRequiredEventHandler(authRequiredEvent, chromeSession);
-            });
-
             //enable network
             var enableNetwork = await chromeSession.SendAsync(new Chrome.Network.EnableCommand());
-
-            //proxy auth
-            await ProxyAuthenticate(proxyUser, proxyPass, chromeSession);
+            
 
             await Task.Delay(1000);
             
@@ -272,89 +257,34 @@ namespace WPFEmbededTest
             return true;
         }
 
-        private void AlignToPannel()
+        async private void AlignToPannel()
         {
+            pannel.Width = (int)host.Width;
+            pannel.Height = (int)host.Height;
             var res = MoveWindow(hWndDocked, -10, -80, pannel.Width+10, pannel.Height+75, true);
+            //int WM_PAINT = 0xF;
+            //await Task.Delay(1000);
+            //SendMessage(childHandles[0], WM_PAINT, IntPtr.Zero, IntPtr.Zero);
+            InvalidateRect(childHandles[0], IntPtr.Zero, true);
+            UpdateWindow(childHandles[0]);
+
+            InvalidateRect(hWndDocked, IntPtr.Zero, true);
+            UpdateWindow(hWndDocked);
         }
 
         void window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             AlignToPannel();
         }
-
-        private static void AuthRequiredEventHandler(AuthRequiredEvent authRequiredEvent, IChromeSession chromeSession)
-        {
-            WriteObject(authRequiredEvent);
-            string requestId = authRequiredEvent.RequestId;
-
-            Chrome.Fetch.AuthChallengeResponse acr = new Chrome.Fetch.AuthChallengeResponse
-            {
-                Response = "ProvideCredentials",
-                Username = proxyUser,
-                Password = proxyPass
-            };
-
-            var auth = chromeSession.SendAsync(new ContinueWithAuthCommand
-            {
-                RequestId = requestId,
-                AuthChallengeResponse = acr
-            });
-        }
-
-        private static void RequestPausedEventHandler(RequestPausedEvent requestPausedEvent, IChromeSession chromeSession)
-        {
-            WriteObject(requestPausedEvent);
-            string requestId = requestPausedEvent.RequestId;
-            var cont = chromeSession.SendAsync(new Chrome.Fetch.ContinueRequestCommand { RequestId = requestId });
-        }
-
-
-
-        private static void RequestWillBeSentEventHandler(RequestWillBeSentEvent requestWillBeSentEvent)
-        {
-            WriteObject(requestWillBeSentEvent);
-        }
-
-        private static void EventSourceMessageReceivedEventHandler(EventSourceMessageReceivedEvent eventSourceMessageReceivedEvent)
-        {
-            WriteObject(eventSourceMessageReceivedEvent);
-        }
-
-        private static void DataReceivedEventHandler(DataReceivedEvent dataReceivedEvent)
-        {
-            WriteObject(dataReceivedEvent);
-        }
-
-        private static void WriteObject(Object ob)
-        {
-            string obString = Newtonsoft.Json.JsonConvert.SerializeObject(ob);
-            Console.WriteLine("RECIVE <<< " + ob.GetType() + " " + obString);
-        }
-
-        async private static Task ProxyAuthenticate(string proxyUser, string proxyPass, IChromeSession chromeSession)
-        {
-            chromeSession.ProxyAuthenticate(proxyUser, proxyPass);
-
-            await chromeSession.SendAsync(new Chrome.Network.SetCacheDisabledCommand { CacheDisabled = true });
-
-            Chrome.Fetch.RequestPattern[] patterns = { new Chrome.Fetch.RequestPattern { UrlPattern = "*" } };
-            await chromeSession.SendAsync(new Chrome.Fetch.EnableCommand { HandleAuthRequests = true, Patterns = patterns });
-        }
-
+        
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             AlignToPannel();
-            //hWndDocked = pDocked.MainWindowHandle;  //cache the window handle
-            //List<IntPtr> childHandles = GetAllChildHandles(hWndDocked);
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             ShowWindow(hWndDocked, ShowWindowCommands.Maximize);
-
-            //SetForegroundWindow(hWndDocked);
-            //ShowWindow(hWndDocked, (ShowWindowCommands)SW_SHOWNORMAL);
-            //AlignToPannel();
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
@@ -379,10 +309,24 @@ namespace WPFEmbededTest
         {
             
             ShowWindow(hWndDocked, ShowWindowCommands.Minimize);
-            await Task.Delay(30);
+            //await Task.Delay(30);
             ShowWindow(hWndDocked, ShowWindowCommands.Normal);
-            await Task.Delay(100);
+            //await Task.Delay(100);
             AlignToPannel();
+        }
+
+        private void Button_Click_6(object sender, RoutedEventArgs e)
+        {
+            IntPtr hWnd = FindWindow("Chrome_RenderWidgetHostHWND", null);
+            IntPtr hWnd2 = FindWindow(null, "Chrome_RenderWidgetHostHWND");
+            findWindow.Content = hWnd.ToString()+" "+ hWnd2.ToString();
+
+            childHandles = GetAllChildHandles(hWndDocked);
+        }
+
+        private void Button_Click_7(object sender, RoutedEventArgs e)
+        {
+            SetActiveWindow(childHandles[0]);
         }
     }
 }
