@@ -27,7 +27,7 @@ namespace MasterDevs.ChromeDevTools.Sample
 
             // STEP 1 - Run Chrome
             var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-            var chromeProcess = chromeProcessFactory.Create(9400, false);
+            var chromeProcess = chromeProcessFactory.Create(9401, true);
             Process pr = ((RemoteChromeProcess)chromeProcess).Process;
 
             // STEP 2 - Create a debugging session
@@ -393,7 +393,7 @@ namespace MasterDevs.ChromeDevTools.Sample
                 Console.WriteLine("Exiting ..");
                 //await chromeSession.SendAsync(new Protocol.Chrome.Network.ClearBrowserCookiesCommand());
 
-                await Task.Delay(3000);
+                await Task.Delay(30000);
 
             }).Wait();
             chromeProcess.Dispose();

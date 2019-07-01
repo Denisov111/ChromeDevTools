@@ -34,7 +34,7 @@ namespace ChromiumFXAndCDP
                 for (int i = 0; i < args.Length; i++)
                 {
                     //Console.WriteLine("args[{0}] == {1}", i, args[i]);
-                    arguments += "args["+i+"] == "+ args[i];
+                    arguments += "args["+i+"]="+ args[i]+" ";
                 }
             }
 
@@ -57,7 +57,15 @@ namespace ChromiumFXAndCDP
 
             ChromiumWebBrowser wb = new ChromiumWebBrowser();
 
-           
+            wb.RequestHandler.CanSetCookie += (s, e) =>
+            {
+                e.SetReturnValue(true);
+            };
+
+            wb.RequestHandler.CanGetCookies += (s, e) =>
+            {
+                e.SetReturnValue(true);
+            };
 
             Form1 f = new Form1();
             f.wb = wb;
@@ -70,6 +78,7 @@ namespace ChromiumFXAndCDP
             wb.Parent = f;
             //wb.LoadUrl("http://mybot.su/ip.php");
             wb.LoadUrl("http://mybot.su");
+            //wb.LoadUrl("http://youtube.com");
             Application.Run(f);
 
             CfxRuntime.Shutdown();
@@ -80,14 +89,16 @@ namespace ChromiumFXAndCDP
             e.Settings.LocalesDirPath = Path.GetFullPath(@"cef\Resources\locales");
             e.Settings.ResourcesDirPath = Path.GetFullPath(@"cef\Resources");
             e.Settings.RemoteDebuggingPort = GetPort();
-            
+            //e.Settings.CachePath = (@"C:\cefcache");
+            //e.Settings.PersistSessionCookies = true;
         }
 
         static void ChromiumWebBrowser_OnBeforeCommandLineProcessing(CfxOnBeforeCommandLineProcessingEventArgs e)
         {
             Console.WriteLine("ChromiumWebBrowser_OnBeforeCommandLineProcessing");
             Console.WriteLine(e.CommandLine.CommandLineString);
-            e.CommandLine.AppendSwitchWithValue("proxy-server", "http://119.191.79.46:80");
+            //e.CommandLine.AppendSwitchWithValue("proxy-server", "http://119.191.79.46:80");
+            //e.CommandLine.AppendSwitchWithValue("persist-session-cookies", "1");
         }
 
         public static int GetPort()
