@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyAuthTest", "ProxyAuthT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFEmbededTest", "WPFEmbededTest\WPFEmbededTest.csproj", "{35A1F556-FD19-42DB-BD33-52D30B0C536B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChromiumFXAndCDP", "ChromiumFXAndCDP\ChromiumFXAndCDP.csproj", "{80571E3A-1DFE-439A-92D9-8FFDC707C377}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,10 @@ Global
 		{35A1F556-FD19-42DB-BD33-52D30B0C536B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{35A1F556-FD19-42DB-BD33-52D30B0C536B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{35A1F556-FD19-42DB-BD33-52D30B0C536B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80571E3A-1DFE-439A-92D9-8FFDC707C377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80571E3A-1DFE-439A-92D9-8FFDC707C377}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80571E3A-1DFE-439A-92D9-8FFDC707C377}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80571E3A-1DFE-439A-92D9-8FFDC707C377}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
