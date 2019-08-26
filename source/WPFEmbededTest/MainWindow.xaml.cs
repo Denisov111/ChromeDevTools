@@ -176,7 +176,9 @@ namespace WPFEmbededTest
             
             // STEP 1 - Run Chrome
             var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-            var chromeProcess = chromeProcessFactory.Create(9401, false, "193.31.103.236:9397");
+            //var chromeProcess = chromeProcessFactory.Create(9401, false, "193.31.103.236:9397");
+            var chromeProcess = chromeProcessFactory.Create(9403, false);
+            //var chromeProcess1 = chromeProcessFactory.Create(9403, false);
             Process pr = ((RemoteChromeProcess)chromeProcess).Process;
             // STEP 2 - Create a debugging session
             var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
@@ -188,10 +190,18 @@ namespace WPFEmbededTest
             if (hWndDocked != IntPtr.Zero) //don't do anything if there's already a window docked.
                 return;
 
-            var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
+            try
             {
-                Url = "https://google.com"
-            });
+                var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
+                {
+                    Url = "https://google.com"
+                });
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            
 
 
             childHandles=null;
