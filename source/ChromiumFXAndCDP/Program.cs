@@ -21,20 +21,34 @@ namespace ChromiumFXAndCDP
 
         static int port = 0;
         static string proxy = null;
-
+        static string arguments = "";
         /// <summary>
         /// Главная точка входа для приложения.
         /// </summary>
         [STAThread]
         static void Main(string[] args)
         {
-            string arguments = "";
+            
             if (args.Length>0)
             {
                 for (int i = 0; i < args.Length; i++)
                 {
                     //Console.WriteLine("args[{0}] == {1}", i, args[i]);
-                    arguments += "args["+i+"]="+ args[i]+" ";
+                    
+                    if (args[i].Contains("--port="))
+                    {
+                        port = Int32.Parse(args[i].Replace("--port=", ""));
+                        arguments += "port=" + port.ToString() + " ";
+                    }
+                        
+                    if (args[i].Contains("--proxy="))
+                    {
+                        string proxy_ = args[i].Replace("--proxy=", "");
+                        string[] ss = proxy_.Split('@');
+                        proxy = "http://" + ss[0];
+                        arguments += "proxy=" + proxy;
+                    }
+                        
                 }
             }
 
@@ -70,14 +84,14 @@ namespace ChromiumFXAndCDP
             Form1 f = new Form1();
             f.wb = wb;
             f.txt = arguments;
-            //f.FormBorderStyle = FormBorderStyle.None;
+            f.FormBorderStyle = FormBorderStyle.None;
             f.Size = new System.Drawing.Size(900, 600);
 
 
             wb.Dock = DockStyle.Fill;
             wb.Parent = f;
-            //wb.LoadUrl("http://mybot.su/ip.php");
-            wb.LoadUrl("http://mybot.su");
+            wb.LoadUrl("http://mybot.su/ip.php");
+            //wb.LoadUrl("http://mybot.su");
             //wb.LoadUrl("http://youtube.com");
             Application.Run(f);
 
@@ -88,7 +102,7 @@ namespace ChromiumFXAndCDP
         {
             e.Settings.LocalesDirPath = Path.GetFullPath(@"cef\Resources\locales");
             e.Settings.ResourcesDirPath = Path.GetFullPath(@"cef\Resources");
-            e.Settings.RemoteDebuggingPort = GetPort();
+            e.Settings.RemoteDebuggingPort = port;
             //e.Settings.CachePath = (@"C:\cefcache");
             //e.Settings.PersistSessionCookies = true;
         }
@@ -97,49 +111,22 @@ namespace ChromiumFXAndCDP
         {
             Console.WriteLine("ChromiumWebBrowser_OnBeforeCommandLineProcessing");
             Console.WriteLine(e.CommandLine.CommandLineString);
+            e.CommandLine.AppendSwitchWithValue("proxy-server", "http://193.42.126.143:8000");
+            e.CommandLine.AppendSwitchWithValue("enable-features", "NetworkService");
+            if (proxy!=null)
+            {
+                e.CommandLine.AppendSwitchWithValue("enable-features", "NetworkService");
+                e.CommandLine.AppendSwitchWithValue("proxy-server", proxy);
+                //e.CommandLine.AppendSwitchWithValue("proxy-server", "http://119.191.79.46:80");
+
+            }
+            //e.CommandLine.AppendSwitchWithValue("proxy-server", "http://193.42.126.143:8000");
+            arguments += " " + e.CommandLine.CommandLineString;
             //e.CommandLine.AppendSwitchWithValue("proxy-server", "http://119.191.79.46:80");
             //e.CommandLine.AppendSwitchWithValue("persist-session-cookies", "1");
         }
 
-        public static int GetPort()
-        {
-            ProcessStartInfo psiOpt = new ProcessStartInfo("cmd.exe", "/C netstat -a -n -o");
-            psiOpt.WindowStyle = ProcessWindowStyle.Hidden;
-            psiOpt.RedirectStandardOutput = true;
-            psiOpt.UseShellExecute = false;
-            psiOpt.CreateNoWindow = true;
-            // запускаем процесс
-            Process procCommand = Process.Start(psiOpt);
-            // получаем ответ запущенного процесса
-            StreamReader srIncoming = procCommand.StandardOutput;
-            // выводим результат
-            string[] ss = srIncoming.ReadToEnd().Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            StringCollection procStr = new StringCollection();
-            procCommand.WaitForExit();
-
-            for (int i = MinDebugPort; i < MaxDebugPort; i++)
-            {
-                bool portIsBusy = false;
-                string portSignature = ":" + i.ToString();
-                foreach (string s in ss)
-                {
-                    if (s.Contains(portSignature))
-                    {
-                        portIsBusy = true;
-                        break;
-                    }
-                }
-                if (portIsBusy)
-                {
-                    continue;
-                }
-                else
-                {
-                    return i;
-                }
-            }
-            return 0;
-        }
+        
 
 
     }

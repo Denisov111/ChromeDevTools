@@ -24,8 +24,8 @@ namespace ProxyAuthTest
     {
         const int ViewPortWidth = 1440;
         const int ViewPortHeight = 900;
-        const string proxyUser = "pkdhZA";
-        const string proxyPass = "U81kW8";
+        const string proxyUser = "KE3jnd";
+        const string proxyPass = "yfFXNU";
 
 
         static void Main(string[] args)
@@ -35,7 +35,7 @@ namespace ProxyAuthTest
                 // STEP 1 - Run Chrome
                 var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
                 //var chromeProcess = chromeProcessFactory.Create(9226, true);
-                var chromeProcess = chromeProcessFactory.Create(9233, false, "91.215.85.219:8000");
+                var chromeProcess = chromeProcessFactory.Create(9346, false, "193.31.103.236:9397");
                 // STEP 2 - Create a debugging session
                 var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
                 var chromeSessionFactory = new ChromeSessionFactory();
@@ -86,7 +86,7 @@ namespace ProxyAuthTest
 
                 var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
                 {
-                    Url = "https://whoer.net/ru"
+                    Url = "http://mybot.su/webrtcleak.php"
                 });
                 await Task.Delay(3000);
                 Console.WriteLine("NavigateResponse: " + navigateResponse.Id);
@@ -143,6 +143,10 @@ namespace ProxyAuthTest
         {
             string obString = Newtonsoft.Json.JsonConvert.SerializeObject(ob);
             Console.WriteLine("RECIVE <<< "+ob.GetType() + " " + obString);
+            if (obString.Contains("94.73.237.177"))
+            {
+                Console.WriteLine("SEND >>> " + obString);
+            }
         }
 
         async private static Task ProxyAuthenticate(string proxyUser, string proxyPass, IChromeSession chromeSession)

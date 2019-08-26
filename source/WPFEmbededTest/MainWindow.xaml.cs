@@ -35,7 +35,13 @@ namespace WPFEmbededTest
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
+
     {
+        const int ViewPortWidth = 1440;
+        const int ViewPortHeight = 900;
+        const string proxyUser = "KE3jnd";
+        const string proxyPass = "yfFXNU";
+
         private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
 
         [DllImport("user32.dll", SetLastError = true)]
@@ -170,7 +176,7 @@ namespace WPFEmbededTest
             
             // STEP 1 - Run Chrome
             var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-            var chromeProcess = chromeProcessFactory.Create(9238, false);
+            var chromeProcess = chromeProcessFactory.Create(9401, false, "193.31.103.236:9397");
             Process pr = ((RemoteChromeProcess)chromeProcess).Process;
             // STEP 2 - Create a debugging session
             var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
@@ -264,7 +270,7 @@ namespace WPFEmbededTest
         {
             pannel.Width = (int)host.Width;
             pannel.Height = (int)host.Height;
-            var res = MoveWindow(hWndDocked, -10, -80, pannel.Width+10, pannel.Height+75, true);
+            var res = MoveWindow(hWndDocked, -10, -10, pannel.Width+10, pannel.Height+75, true);
             //int WM_PAINT = 0xF;
             //await Task.Delay(1000);
             //SendMessage(childHandles[0], WM_PAINT, IntPtr.Zero, IntPtr.Zero);

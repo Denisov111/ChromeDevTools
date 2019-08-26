@@ -11,6 +11,7 @@ namespace MasterDevs.ChromeDevTools
         public string ChromePath { get; }
 
         //public ChromeProcessFactory(IDirectoryCleaner directoryCleaner, string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+        //public ChromeProcessFactory(IDirectoryCleaner directoryCleaner, string chromePath = @"chr\chrome.exe")
         public ChromeProcessFactory(IDirectoryCleaner directoryCleaner, string chromePath = @"chr\chrome.exe")
         {
             DirectoryCleaner = directoryCleaner;
@@ -60,17 +61,25 @@ namespace MasterDevs.ChromeDevTools
             var remoteDebuggingArg = $"--remote-debugging-port={port}";
             var userDirectoryArg = $"--user-data-dir=\"{directoryInfo.FullName}\"";
             const string headlessArg = "--headless --disable-gpu";
+            const string sizeArg = "--window-size=800,600";
+            const string extensionDirectoryArg = @"C:\ext";
+            //const string extensionsArg = "--load-extension="+extensionDirectoryArg;
             var chromeProcessArgs = new List<string>
             {
                 remoteDebuggingArg,
                 userDirectoryArg,
+                sizeArg,
                 "--bwsi",
-                "--no-first-run"
+                "--no-first-run",
+                //"--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
+                //"--multiple_routes_enabled=false",
+                //"--nonproxied_udp_enabled=false"
             };
             if (headless)
                 chromeProcessArgs.Add(headlessArg);
             if (proxyArgs != null)
                 chromeProcessArgs.Add(proxyArgs);
+            //chromeProcessArgs.Add(extensionsArg);
             var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
             var chromeProcess = Process.Start(processStartInfo);
 

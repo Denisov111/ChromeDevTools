@@ -26,12 +26,17 @@ namespace MasterDevs.ChromeDevTools.ProtocolGenerator
         {
             // At this point in time, we only process the most recent Chrome
             // and iOS (Safari) protocols.
+            /*
             Dictionary<string, string[]> protocolFiles = new Dictionary<string, string[]>
             {
                 {"Chrome", new [] { "js_protocol.json", "browser_protocol.json" } },
                 {"iOS", new [] { "Inspector-iOS-9.3.json" } }
-            };
+            };*/
 
+            Dictionary<string, string[]> protocolFiles = new Dictionary<string, string[]>
+            {
+                {"Chrome", new [] { "browser_protocol.json" } }
+            };
 
             //protocolFiles.Add("Chrome-0.1", "Inspector-0.1.json");
             //protocolFiles.Add("Chrome-1.0", "Inspector-1.0.json");

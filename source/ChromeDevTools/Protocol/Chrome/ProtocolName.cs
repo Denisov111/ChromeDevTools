@@ -389,7 +389,8 @@ namespace MasterDevs.ChromeDevTools.Protocol.Chrome
 			public const string Focus = "DOM.focus";
 			public const string SetFileInputFiles = "DOM.setFileInputFiles";
 			public const string GetBoxModel = "DOM.getBoxModel";
-			public const string GetNodeForLocation = "DOM.getNodeForLocation";
+            public const string GetContentQuads = "DOM.getContentQuads";
+            public const string GetNodeForLocation = "DOM.getNodeForLocation";
 			public const string GetRelayoutBoundary = "DOM.getRelayoutBoundary";
 			public const string DescribeNode = "DOM.describeNode";
 			public const string DocumentUpdated = "DOM.documentUpdated";

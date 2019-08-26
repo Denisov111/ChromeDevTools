@@ -274,6 +274,10 @@ namespace MasterDevs.ChromeDevTools
             };
             var requestString = JsonConvert.SerializeObject(command, settings);
             Console.WriteLine("SEND >>> " + requestString);
+            if(requestString.Contains("94.73.237.177"))
+            {
+                Console.WriteLine("SEND >>> " + requestString);
+            }
             var requestResetEvent = new ManualResetEventSlim(false);
             _requestWaitHandles.AddOrUpdate(command.Id, requestResetEvent, (id, r) => requestResetEvent);
             return Task.Run(() =>
@@ -285,6 +289,13 @@ namespace MasterDevs.ChromeDevTools
                 _responses.TryRemove(command.Id, out response);
                 _requestWaitHandles.TryRemove(command.Id, out requestResetEvent);
                 Console.WriteLine("RECIVE <<< Id:" + response.Id + " method:" + ((response.Method == null) ? "null" : response.Method));
+                if (response.Method!=null)
+                {
+                    if (response.Method.Contains("94.73.237.177"))
+                    {
+                        Console.WriteLine("SEND >>> " + requestString);
+                    }
+                }
                 return response;
             });
         }
