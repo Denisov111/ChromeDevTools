@@ -18,7 +18,7 @@ namespace MasterDevs.ChromeDevTools
         private readonly ConcurrentDictionary<string, ConcurrentBag<Action<object>>> _handlers = new ConcurrentDictionary<string, ConcurrentBag<Action<object>>>();
         private ICommandFactory _commandFactory;
         private IEventFactory _eventFactory;
-        private ManualResetEvent _openEvent = new ManualResetEvent(false);
+        private ManualResetEvent _soketStatusEvent = new ManualResetEvent(false);
         private ManualResetEvent _publishEvent = new ManualResetEvent(false);
         private ConcurrentDictionary<long, ManualResetEventSlim> _requestWaitHandles = new ConcurrentDictionary<long, ManualResetEventSlim>();
         private ICommandResponseFactory _responseFactory;
@@ -67,7 +67,7 @@ namespace MasterDevs.ChromeDevTools
 
         private Task Init()
         {
-            _openEvent.Reset();
+            _soketStatusEvent.Reset();
 
             _webSocket = new WebSocket(_endpoint);
             _webSocket.EnableAutoSendPing = false;
@@ -80,8 +80,24 @@ namespace MasterDevs.ChromeDevTools
             _webSocket.Open();
             return Task.Run(() =>
             {
-                _openEvent.WaitOne();
+                _soketStatusEvent.WaitOne();
             });
+        }
+
+        private void WebSocket_Opened(object sender, EventArgs e)
+        {
+            _soketStatusEvent.Set();
+        }
+
+        private void WebSocket_Closed(object sender, EventArgs e)
+        {
+        }
+
+        private void WebSocket_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
+        {
+            _soketStatusEvent.Set();
+            socketExeption = e.Exception;
+            HandleError(e.Exception);
         }
 
         public Task<ICommandResponse> SendAsync<T>(CancellationToken cancellationToken)
@@ -96,16 +112,20 @@ namespace MasterDevs.ChromeDevTools
             var task = SendCommand(command, cancellationToken);
             return CastTaskResult<ICommandResponse, CommandResponse<T>>(task);
         }
-
+        
         private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived : TBase
         {
+            var typee = typeof(TDerived);
+            Type typeParameterType = typeof(TDerived);
+            Type typeParameterType2 = typeof(TBase);
+            Console.WriteLine(typee);
             var tcs = new TaskCompletionSource<TDerived>();
             task.ContinueWith(t => tcs.SetResult((TDerived)t.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
             task.ContinueWith(t => tcs.SetException(t.Exception.InnerExceptions), TaskContinuationOptions.OnlyOnFaulted);
             task.ContinueWith(t => tcs.SetCanceled(), TaskContinuationOptions.OnlyOnCanceled);
             return tcs.Task;
         }
-
+        
         /*
         private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived: TBase
         {
@@ -290,16 +310,21 @@ namespace MasterDevs.ChromeDevTools
             Console.WriteLine("SEND >>> " + requestString);
             var requestResetEvent = new ManualResetEventSlim(false);
             _requestWaitHandles.AddOrUpdate(command.Id, requestResetEvent, (id, r) => requestResetEvent);
+            
             return Task.Run(() =>
             {
                 EnsureInit();
-                _webSocket.Send(requestString);
-                requestResetEvent.Wait(cancellationToken);
-                ICommandResponse response = null;
-                _responses.TryRemove(command.Id, out response);
-                _requestWaitHandles.TryRemove(command.Id, out requestResetEvent);
-                Console.WriteLine("RECIVE <<< Id:" + response.Id + " method:" + ((response.Method == null) ? "null" : response.Method));
-                return response;
+                if(socketExeption==null)
+                {
+                    _webSocket.Send(requestString);
+                    requestResetEvent.Wait(cancellationToken);
+                    ICommandResponse response = null;
+                    _responses.TryRemove(command.Id, out response);
+                    _requestWaitHandles.TryRemove(command.Id, out requestResetEvent);
+                    Console.WriteLine("RECIVE <<< Id:" + response.Id + " method:" + ((response.Method == null) ? "null" : response.Method));
+                    return response;
+                }
+                return null;
             });
         }
 
@@ -327,9 +352,7 @@ namespace MasterDevs.ChromeDevTools
             return null != evnt;
         }
 
-        private void WebSocket_Closed(object sender, EventArgs e)
-        {
-        }
+        
 
         private void WebSocket_DataReceived(object sender, WebSocket4Net.DataReceivedEventArgs e)
         {
@@ -350,11 +373,7 @@ namespace MasterDevs.ChromeDevTools
 
 
 
-        private void WebSocket_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
-        {
-            socketExeption = e.Exception;
-            HandleError(e.Exception);
-        }
+        
 
         private void HandleError(Exception ex)
         {
@@ -395,10 +414,7 @@ namespace MasterDevs.ChromeDevTools
             //throw new Exception("Don't know what to do with response: " + e.Message);
         }
 
-        private void WebSocket_Opened(object sender, EventArgs e)
-        {
-            _openEvent.Set();
-        }
+        
 
         async public void ProxyAuthenticate(string proxyUser, string proxyPass)
         {
