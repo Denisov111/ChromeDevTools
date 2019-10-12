@@ -113,6 +113,7 @@ namespace MasterDevs.ChromeDevTools
             return CastTaskResult<ICommandResponse, CommandResponse<T>>(task);
         }
         
+        /*
         private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived : TBase
         {
             var typee = typeof(TDerived);
@@ -125,7 +126,7 @@ namespace MasterDevs.ChromeDevTools
             task.ContinueWith(t => tcs.SetCanceled(), TaskContinuationOptions.OnlyOnCanceled);
             return tcs.Task;
         }
-        
+        */
         /*
         private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived: TBase
         {
@@ -136,7 +137,7 @@ namespace MasterDevs.ChromeDevTools
             return tcs.Task;
         }
         */
-        /*
+        
         private Task<TDerived> CastTaskResult<TBase, TDerived>(Task<TBase> task) where TDerived : TBase
         {
             var tcs = new TaskCompletionSource<TDerived>();
@@ -223,7 +224,6 @@ namespace MasterDevs.ChromeDevTools
                 }, TaskContinuationOptions.OnlyOnCanceled);
             return tcs.Task;
         }
-        */
 
         public void Subscribe<T>(Action<T> handler) where T : class
         {
