@@ -39,8 +39,10 @@ namespace WPFEmbededTest
     {
         const int ViewPortWidth = 1440;
         const int ViewPortHeight = 900;
-        const string proxyUser = "KE3jnd";
-        const string proxyPass = "yfFXNU";
+        const string proxyUser = "RR3XkJ";
+        const string proxyPass = "nEy0TU";
+
+        #region WIN32
 
         private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
 
@@ -159,6 +161,8 @@ namespace WPFEmbededTest
         private IntPtr hWndDocked;
         public System.Windows.Forms.Panel pannel;
 
+        #endregion
+
         IChromeSession chromeSession;
         List<IntPtr> childHandles;
         int procId;
@@ -176,8 +180,8 @@ namespace WPFEmbededTest
             
             // STEP 1 - Run Chrome
             var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
-            //var chromeProcess = chromeProcessFactory.Create(9401, false, "193.31.103.236:9397");
-            var chromeProcess = chromeProcessFactory.Create(9504, false, null, "jniherujherfjio");
+            var chromeProcess = chromeProcessFactory.Create(9401, false, "176.53.142.238:8000", null, "http");
+            //var chromeProcess = chromeProcessFactory.Create(9504, false, null, "jniherujherfjio");
             //var chromeProcess1 = chromeProcessFactory.Create(9504, false);
             Process pr = ((RemoteChromeProcess)chromeProcess).Process;
             // STEP 2 - Create a debugging session
@@ -194,7 +198,8 @@ namespace WPFEmbededTest
             {
                 var navigateResponse = await chromeSession.SendAsync(new NavigateCommand
                 {
-                    Url = "https://google.com"
+                    //Url = "https://google.com"
+                    Url = "about:blank"
                 });
             }
             catch(Exception ex)

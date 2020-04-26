@@ -24,8 +24,8 @@ namespace ProxyAuthTest
     {
         const int ViewPortWidth = 1440;
         const int ViewPortHeight = 900;
-        const string proxyUser = "KE3jnd";
-        const string proxyPass = "yfFXNU";
+        const string proxyUser = "RR3XkJ";
+        const string proxyPass = "nEy0TU";
 
 
         static void Main(string[] args)
@@ -35,7 +35,7 @@ namespace ProxyAuthTest
                 // STEP 1 - Run Chrome
                 var chromeProcessFactory = new ChromeProcessFactory(new StubbornDirectoryCleaner());
                 //var chromeProcess = chromeProcessFactory.Create(9226, true);
-                var chromeProcess = chromeProcessFactory.Create(9346, false, "193.31.103.236:9397");
+                var chromeProcess = chromeProcessFactory.Create(9401, false, "45.133.32.223:8000", null, "socks5");
                 // STEP 2 - Create a debugging session
                 var sessionInfo = (await chromeProcess.GetSessionInfo()).LastOrDefault();
                 var chromeSessionFactory = new ChromeSessionFactory();

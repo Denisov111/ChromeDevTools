@@ -25,7 +25,7 @@ namespace MasterDevs.ChromeDevTools
         /// <param name="headless"></param>
         /// <param name="proxyServer">string ip:port (example: 213.226.76.117:8000)</param>
         /// <returns></returns>
-        public IChromeProcess Create(int port, bool headless, string proxyServer = null, string path = null, string proxyProcol = null)
+        public IChromeProcess Create(int port, bool headless, string proxyServer = null, string path = null, string proxyProtocol = null)
         {
             /*
             string path = Path.GetRandomFileName();
@@ -77,8 +77,7 @@ namespace MasterDevs.ChromeDevTools
             var remoteDebuggingArg = $"--remote-debugging-port={port}";
             var userDirectoryArg = $"--user-data-dir=\"{directoryInfo.FullName}\"";
             const string headlessArg = "--headless --disable-gpu";
-            const string sizeArg = "--window-size=800,600";
-            const string extensionDirectoryArg = @"C:\ext";
+            const string sizeArg = "--window-size=900,640";
             var chromeProcessArgs = new List<string>
             {
                 remoteDebuggingArg,
@@ -93,16 +92,17 @@ namespace MasterDevs.ChromeDevTools
 
             if (proxyServer != null)
             {
-                if (proxyProcol == "http")
+                if (proxyProtocol == "http")
                 {
                     chromeProcessArgs.Add("--proxy-server=http://" + proxyServer);
                 }
 
-                if (proxyProcol == "socks5")
+                if (proxyProtocol == "socks5")
                 {
                     string arg = "--host-resolver-rules=\"MAP * ~NOTFOUND , EXCLUDE " + proxyServer + "\"";
-                    chromeProcessArgs.Add("--proxy-server=socks5://" + proxyServer);
-                    chromeProcessArgs.Add(arg);
+                    chromeProcessArgs.Add("--proxy-server=\"socks5://" + proxyServer+"\"");
+                    //chromeProcessArgs.Add(arg);
+                    //chromeProcessArgs.Add("--proxy-server=http://" + proxyServer);
                 }
             }
             //chromeProcessArgs.Add(extensionsArg);
